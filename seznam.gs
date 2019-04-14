@@ -1,7 +1,7 @@
 /********************************************************************************
  *
- *  Seznam Webmaster API Google Apps Script v 0.1 - Get urls data into Google Sheets
- *  Copyright (C) 2017  Marek Čech
+ *  Seznam Webmaster API Google Apps Script v 0.2 - Get urls data into Google Sheets
+ *  Copyright (C) 2019  Marek Čech
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,10 +20,17 @@
  *   http://www.digitalniarchitekti.cz/
  *   https://www.facebook.com/digitalniarchitekti
  * 
+ *
+ *   Changelog
+ *   0.1 - verze 2017 - initial release
+ *   0.2 - verze 14.4.2019 - fix if return URL 0
+ *   - extended article and guide https://digitalniarchitekti.cz/2017/11/08/data-api-seznam-webmaster-google-dokumenty-google-docs/
+ *
+ *
  */
 
 // Your API key you get on https://reporter.seznam.cz/wm/
-var API_KEY = 'INSERT YOUR API';
+var API_KEY = 'YOUR API KEY';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -311,17 +318,30 @@ function seznamErrorUrls() {
     // Log the Urls array
     Logger.log(readyUrls);
     
-    // select the output shee
+    // select the output sheet
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Error Urls');
+    
+    
+    // check if any URLs were returned
+    if (count > 0) {
+    
     
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
     
+    
     // output the Urls to the sheet
     sheet.getRange(4,1,numRows,numCols).setValues(readyUrls);
     sheet.getRange(1,4).setValue(count);
+    }
+    
+    // if not provide user with message
+    else {
+      sheet.getRange(1,4).setValue(count);
+      sheet.getRange(4,1).setValue("Zero Erorr URLs");
+    }
     
   }
   catch (error) {
@@ -379,6 +399,11 @@ function seznamContentUrls() {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Content Urls');
     
+    
+    // check if there are any URLS
+    if (count > 0) {
+        
+        
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
@@ -386,6 +411,15 @@ function seznamContentUrls() {
     // output the Urls to the sheet
     sheet.getRange(4,1,numRows,numCols).setValues(readyUrls);
     sheet.getRange(1,4).setValue(count);
+    
+    }
+    
+    // if not provide user with message
+    else {
+      sheet.getRange(1,4).setValue(count);
+      sheet.getRange(4,1).setValue("Zero Content URLs");
+    }
+    
     
   }
   catch (error) {
@@ -443,6 +477,11 @@ function seznamIndexUrls() {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Index Urls');
     
+    // check if there are any URLS
+    if (count > 0) {
+        
+       
+    
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
@@ -451,6 +490,14 @@ function seznamIndexUrls() {
     sheet.getRange(4,1,numRows,numCols).setValues(readyUrls);
     sheet.getRange(1,4).setValue(count);
     
+    }
+    
+    // if not provide user with message
+    else {
+      sheet.getRange(1,4).setValue(count);
+      sheet.getRange(4,1).setValue("Zero Index URLs");
+    }
+      
   }
   catch (error) {
     // deal with any errors
@@ -507,6 +554,10 @@ function seznamRedirectUrls() {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName('Redirect Urls');
     
+    // check if there are any URLS
+    if (count > 0) {
+        
+    
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
@@ -514,6 +565,15 @@ function seznamRedirectUrls() {
     // output the Urls to the sheet
     sheet.getRange(4,1,numRows,numCols).setValues(readyUrls);
     sheet.getRange(1,4).setValue(count);
+    
+    }
+    
+    // if not provide user with message
+    else {
+      sheet.getRange(1,4).setValue(count);
+      sheet.getRange(4,1).setValue("Zero Redirect URLs");
+    }
+      
     
   }
   catch (error) {
