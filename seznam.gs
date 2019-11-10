@@ -1,6 +1,6 @@
 /********************************************************************************
  *
- *  Seznam Webmaster API Google Apps Script v 0.2 - Get urls data into Google Sheets
+ *  Seznam Webmaster API Google Apps Script v 0.3 - Get urls data into Google Sheets
  *  Copyright (C) 2019  Marek Čech
  *
  *   This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,11 @@
  *
  *   Changelog
  *   0.1 - verze 2017 - initial release
- *   0.2 - verze 14.4.2019 - fix if return URL 0
- *   - extended article and guide https://digitalniarchitekti.cz/2017/11/08/data-api-seznam-webmaster-google-dokumenty-google-docs/
- *
+ *   0.2 - verze 14.4.2019 - fix if return 0
+ *       - extended article and guide https://digitalniarchitekti.cz/2017/11/08/data-api-seznam-webmaster-google-dokumenty-google-docs/
+ *   0.3 - verze 10.11.2019 - New sheets are created when URLs are requested for management of historical development, 
+ *          the url details are added to the Url Details sheet insted of rewriting it, graf added to index history, 
+ *          code documentation and categorisation, typos fixed, sheet renamed
  *
  */
 
@@ -40,17 +42,14 @@ function onOpen() {
       .addItem('History Data', 'seznamHistory' )
       .addSeparator()
       .addItem('Error Urls', 'seznamErrorUrls' )
-      .addItem('Content Urls', 'seznamContentUrls' )
+      .addItem('Downloaded Urls', 'seznamContentUrls' )
       .addItem('Index Urls', 'seznamIndexUrls' )
       .addItem('Redirect Urls', 'seznamRedirectUrls' )
       .addSeparator()
       .addItem('Reindex Selected', 'seznamReindex' )
       .addItem('Details about Selected', 'seznamDetails' )
-  //    .addSubMenu(ui.createMenu('Sub-menu')
-  //        .addItem('Second item', 'Test Submenu'))
       .addToUi();
 }
-
 
 
 /********************************************************************************
@@ -181,7 +180,7 @@ function seznamReindex() {
   };
 }
 
-  
+   
 /********************************************************************************
  * 
  * After selection run this from menu item and get details for selected Urls
@@ -210,8 +209,12 @@ function seznamDetails() {
   var date = Utilities.formatDate(new Date(), "GMT+1", "dd/MM/yyyy")
 
   // every Url selected will be processed separately 
-  
+
   for (var i = 0; i < data.length; i++) {
+  
+    // reset the array
+    var detailsData = [];
+  
     
     Logger.log("Requested URL:" + data[i]);
     var response = UrlFetchApp.fetch(root+endpoint+data[i], params);
@@ -220,8 +223,7 @@ function seznamDetails() {
     var datajson = response.getContentText();
     var json = JSON.parse(datajson);
     
-    // reset the array
-    var detailsData = [];
+
     
     // Log the json array
     Logger.log("Parsed response:" +json);
@@ -259,14 +261,17 @@ function seznamDetails() {
     var numRows = detailsData.length;
     var numCols = detailsData[0].length;
     
-    // output the info to the sheet, offset it for new line based on number of cycle
-    sheet.getRange(4,1,numRows,numCols).offset(i, 0).setValues(detailsData);                   
-   }
+    // get last row
+    var range = sheet.getDataRange();
+    var lastRow = range.getLastRow()+1;
     
+    // output the info to the sheet, offset it for new line based on number of cycle
+    sheet.getRange(lastRow,1,numRows,numCols).setValues(detailsData);                                      
+   }
+   
   // give feedback to user that everything is ok
-  sheet.getActiveRange().offset(0, 1).setValue("details requsted "+date);
- 
-  
+  sheet.getActiveRange().offset(0, 1).setValue("Url details reqeusted "+date);
+   
   }
    catch (error) {
     // deal with any errors
@@ -325,12 +330,19 @@ function seznamErrorUrls() {
     
     // check if any URLs were returned
     if (count > 0) {
-    
+         
+    // get todays date
+    var formattedDate = Utilities.formatDate(new Date(), "GMT+1", "yyyy-MM-dd");
+   
+    // copy sheet from template
+    var sheet = ss.getSheetByName('Error Urls');
+    sheet.copyTo(ss).setName(formattedDate + " Error Urls");  
+    Utilities.sleep(1000);   
+    var sheet = ss.getSheetByName(formattedDate + " Error Urls");
     
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
-    
     
     // output the Urls to the sheet
     sheet.getRange(4,1,numRows,numCols).setValues(readyUrls);
@@ -340,7 +352,7 @@ function seznamErrorUrls() {
     // if not provide user with message
     else {
       sheet.getRange(1,4).setValue(count);
-      sheet.getRange(4,1).setValue("Zero Erorr URLs");
+      sheet.getRange(4,1).setValue("Zero Error URLs");
     }
     
   }
@@ -353,7 +365,7 @@ function seznamErrorUrls() {
   
 /********************************************************************************
  * 
- * Retrives Content URL list and populates a Google Sheet
+ * Retrives Downloaded URL list and populates a Google Sheet
  * 
  */
   
@@ -394,16 +406,22 @@ function seznamContentUrls() {
     
     // Log the Urls array
     Logger.log(readyUrls);
-    
-    // select the output sheet
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Content Urls');
-    
-    
+   
     // check if there are any URLS
     if (count > 0) {
         
+    // select the output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
         
+    // get todays date
+    var formattedDate = Utilities.formatDate(new Date(), "GMT+1", "yyyy-MM-dd")
+
+    // copy sheet from template
+    var sheet = ss.getSheetByName('Downloaded Urls');
+    sheet.copyTo(ss).setName(formattedDate + " Downloaded Urls");  
+    Utilities.sleep(1000);   
+    var sheet = ss.getSheetByName(formattedDate + " Downloaded Urls"); 
+          
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
     var numCols = readyUrls[0].length;
@@ -473,14 +491,28 @@ function seznamIndexUrls() {
     // Log the Urls array
     Logger.log(readyUrls);
     
-    // select the output shee
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Index Urls');
+  
     
     // check if there are any URLS
     if (count > 0) {
         
-       
+    // select the output shee
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+   // select the output shee
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    // get todays date
+    var formattedDate = Utilities.formatDate(new Date(), "GMT+1", "yyyy-MM-dd")
+
+
+    // copy sheet from template
+    var sheet = ss.getSheetByName('Index Urls');
+    sheet.copyTo(ss).setName(formattedDate + " Index Urls");  
+    Utilities.sleep(1000);   
+    var sheet = ss.getSheetByName(formattedDate + " Index Urls");
+    
+    
     
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
@@ -550,13 +582,24 @@ function seznamRedirectUrls() {
     // Log the Urls array
     Logger.log(readyUrls);
     
-    // select the output shee
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName('Redirect Urls');
+
     
     // check if there are any URLS
     if (count > 0) {
         
+    // select the output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+     
+    // get todays date
+    var formattedDate = Utilities.formatDate(new Date(), "GMT+1", "yyyy-MM-dd")
+
+   
+    // copy sheet from template
+    var sheet = ss.getSheetByName('Redirect Urls');
+    sheet.copyTo(ss).setName(formattedDate + " Redirect Urls");  
+    Utilities.sleep(1000);   
+    var sheet = ss.getSheetByName(formattedDate + " Redirect Urls"); 
+    
     
     // calculate the number of rows and columns needed
     var numRows = readyUrls.length;
